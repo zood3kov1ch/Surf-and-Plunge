@@ -1,0 +1,102 @@
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local TeleportService = game:GetService("TeleportService")
+
+local LocalPlayer = Players.LocalPlayer
+
+local Fluent = loadstring(game:HttpGet(
+    "https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"
+))()
+
+local Window = Fluent:CreateWindow({
+    Title = "Kyelisz",
+    TabWidth = 160,
+    Size = UDim2.fromOffset(580, 460),
+    Acrylic = true,
+    Theme = "Dark",
+    MinimizeKey = Enum.KeyCode.LeftControl
+})
+
+local Tab = Window:AddTab({
+    Title = "Main",
+    Icon = "coins"
+})
+
+Tab:AddButton({
+    Title = "Infinite Coins",
+    Callback = function()
+        local Event = ReplicatedStorage.Remote.Race
+
+        Event:FireServer(
+            "ToQuit",
+            math.huge
+        )
+
+        task.delay(2, function()
+            TeleportService:TeleportToPlaceInstance(
+                game.PlaceId,
+                game.JobId,
+                LocalPlayer
+            )
+        end)
+    end
+})
+
+local WinsAmount = 500
+
+Tab:AddInput("WinsAmount", {
+    Title = "Wins Amount",
+    Default = "500",
+    Placeholder = "Enter number of wins",
+    Numeric = true,
+    Finished = false,
+    Callback = function(Value)
+        local Number = tonumber(Value)
+
+        if Number then
+            WinsAmount = math.floor(Number)
+        end
+    end
+})
+
+Tab:AddButton({
+    Title = "Get Wins",
+    Callback = function()
+        local Event = ReplicatedStorage.Remote.Race
+
+        for i = 1, WinsAmount do
+            Event:FireServer("GetWin")
+        end
+    end
+})
+
+local LoopWins = false
+
+Tab:AddToggle("LoopAddWins", {
+    Title = "Loop Add Wins",
+    Default = false,
+    Callback = function(Value)
+        LoopWins = Value
+
+        if LoopWins then
+            task.spawn(function()
+                local Event = ReplicatedStorage.Remote.Race
+
+                while LoopWins do
+                    for i = 1, WinsAmount do
+                        if not LoopWins then
+                            break
+                        end
+
+                        Event:FireServer("GetWin")
+                        task.wait()
+                    end
+
+                    task.wait(0.1)
+                end
+            end)
+        end
+    end
+})
+
+Window:SelectTab(1)
